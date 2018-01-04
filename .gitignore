@@ -1,0 +1,6 @@
+airflow_home/logs
+airflow-webserver.pid
+airflow.db
+*.pyc
+.~lock*
+docker-files/connect-sftp/id_rsa

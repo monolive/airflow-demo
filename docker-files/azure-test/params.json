@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageaccountname": {
+      "value": "monolive11812"
+    },
+   "storageaccountkey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/d1b733f5-44e7-4f21-b9b9-c272d707b505/resourceGroups/airflow-west-eu/providers/Microsoft.KeyVault/vaults/dockerConfig"
+        },
+        "secretName": "azurefilesstoragekey"
+      }
+    },
+    "registrypassword": {
+       "reference": {
+         "keyVault": {
+           "id": "" - M8T0M+eVBdT9CRQHAck3g20c7Ye1OvBE
+         },
+         "secretName": "azureregistrypwd"
+       }
+     }
+  }
+}
