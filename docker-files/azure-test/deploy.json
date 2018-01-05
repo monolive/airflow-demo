@@ -7,6 +7,9 @@
       },
       "storageaccountkey": {
         "type": "securestring"
+      },
+      "imageregistrypassword": {
+        "type": "securestring"
       }
     },
     "resources":[{
@@ -19,7 +22,6 @@
           "name": "az-test",
           "properties": {
             "image": "monolivedockerregistry.azurecr.io/az-test:v3",
-            "registry-password": "[parameters('registrypassword')]",
             "resources": {
               "requests": {
                 "cpu": 1,
@@ -37,6 +39,13 @@
           }
         }],
         "osType": "Linux",
+        "imageRegistryCredentials": [
+          {
+            "server": "monolivedockerregistry.azurecr.io",
+            "username": "monoliveDockerRegistry",
+            "password": "[parameters('imageregistrypassword')]"
+          }
+        ],
         "restartPolicy": "OnFailure",
         "volumes": [{
           "name": "config",

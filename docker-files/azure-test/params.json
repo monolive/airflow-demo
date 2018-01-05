@@ -13,10 +13,10 @@
         "secretName": "azurefilesstoragekey"
       }
     },
-    "registrypassword": {
+    "imageregistrypassword": {
        "reference": {
          "keyVault": {
-           "id": "" - M8T0M+eVBdT9CRQHAck3g20c7Ye1OvBE
+           "id": "/subscriptions/d1b733f5-44e7-4f21-b9b9-c272d707b505/resourceGroups/airflow-west-eu/providers/Microsoft.KeyVault/vaults/dockerConfig"
          },
          "secretName": "azureregistrypwd"
        }
