@@ -102,25 +102,30 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
     container_resource_requirements = None
     command = None
     environment_variables = None
-    config_volume_mount = [VolumeMount(name='config', mount_path='/mnt/config')]
-    #data_volume_mount = ('data', '/mnt/data')
+    volume_mount = [VolumeMount(name='config', mount_path='/mnt/config'),VolumeMount(name='data', mount_path='/mnt/data')]
+    # data_volume_mount = [VolumeMount(name='data', mount_path='/mnt/data')]
 
     # set memory and cpu
     container_resource_requests = ResourceRequests(memory_in_gb = memory, cpu = cpu)
     container_resource_requirements = ResourceRequirements(requests = container_resource_requests)
 
-    volume_mount = AzureFileVolume(share_name='config',
+    az_config_file_volume = AzureFileVolume(share_name='config',
+                            storage_account_name=az_conf['storage_account_name'],
+                            storage_account_key=az_conf['storage_account_key'])
+    az_data_file_volume = AzureFileVolume(share_name='data',
                             storage_account_name=az_conf['storage_account_name'],
                             storage_account_key=az_conf['storage_account_key'])
 
+
     #volume_mount = VolumeMount(name='config', mount_path='/mnt/config')
-    volume = Volume(name='config', azure_file=volume_mount)
+    volumes = [Volume(name='config', azure_file=az_config_file_volume),Volume(name='data', azure_file=az_data_file_volume)]
     container = Container(name = name,
                          image = image,
                          resources = container_resource_requirements,
                          command = command,
                          ports = [ContainerPort(port=port)],
-                         environment_variables = environment_variables )
+                         environment_variables = environment_variables,
+                         volume_mounts = volume_mount)
 
     # defaults for container group
     cgroup_os_type = OperatingSystemTypes.linux
@@ -136,7 +141,7 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
                            os_type = cgroup_os_type,
                            image_registry_credentials = [image_registry_credential],
                            restart_policy = cgroup_restart_policy,
-                           volumes = [volume])
+                           volumes = volumes)
 
     client.container_groups.create_or_update(resource_group_name, name, cgroup)
 
