@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+
+import sys
+import ConfigParser
+import argparse
+
+from utilities import AzureContext
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.containerinstance import ContainerInstanceManagementClient
+from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, Port, IpAddress,
+                                                 ResourceRequirements, ResourceRequests, ContainerGroupNetworkProtocol,
+                                                 ContainerGroupRestartPolicy, OperatingSystemTypes, VolumeMount,
+                                                 ImageRegistryCredential, AzureFileVolume, Volume)
+
+def main():
+    args = parsing_options()
+    az_conf = read_az_conf(args.azureConf)
+    resource_client, client = connect_azure(az_conf)
+    """Azure Container instance example."""
+
+    # List all the container instances in the subscription
+    # Define attributes of the container instance
+    # Ensure the resource group is created
+    # Create the container
+    # Retrieve and show the newly created container instance
+    # Delete and clean up
+
+    list_container_groups(client)
+
+    resource_group_name = "my-container-resource-group"
+    name = "mycontainer"
+    location = "westeurope"
+
+    resource_client.resource_groups.create_or_update(resource_group_name, { 'location': location })
+
+    create_container_group(az_conf, client, resource_group_name = resource_group_name,
+                          name = name,
+                          location = location,
+                          image = "monolivedockerregistry.azurecr.io/az-test:v3",
+                          memory = 1,
+                          cpu = 1)
+
+    show_container_group(client, resource_group_name, name)
+
+    #delete_resources(client, resource_client, resource_group_name, name)
+
+def parsing_options():
+    # Parse command line options
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--azure-conf', action='store', dest='azureConf', help='file containing azure credentials (default: %(default)s', required=False, default='/home/orenault/Developments/airflow-demo/conf/azure.conf')
+
+    try:
+        results = parser.parse_args()
+        return results
+    except SystemExit as err:
+        if err.code == 2:
+            parser.print_help()
+        sys.exit(0)
+
+def read_az_conf(azureConfFile):
+    # Read Azure configuration file
+    azure = {}
+    try:
+        with open(azureConfFile, 'r') as conf:
+            config = ConfigParser.ConfigParser()
+            config.readfp(conf)
+            for section_name in config.sections():
+                for name, value in config.items(section_name):
+                    azure[name] = value
+        return azure
+    except IOError:
+        print ("Can't read azure conf file!")
+
+def connect_azure(azure):
+    # Connect to Azure
+    azure_context = AzureContext(
+        subscription_id = azure['azure_subscription_id'],
+        client_id = azure['azure_client_id'],
+        client_secret = azure['azure_client_secret'],
+        tenant = azure['azure_tenant_id']
+    )
+
+    # construct the clients
+    resource_client = ResourceManagementClient(azure_context.credentials, azure_context.subscription_id)
+    client = ContainerInstanceManagementClient(azure_context.credentials, azure_context.subscription_id)
+    return resource_client, client
+
+def list_container_groups(client):
+    # List known containers
+    container_groups = client.container_groups.list()
+    for container_group in container_groups:
+        print("\t{0}: {{ location: '{1}', containers: {2} }}".format(
+            container_group.name,
+            container_group.location,
+            len(container_group.containers))
+        )
+
+def create_container_group(az_conf, client, resource_group_name, name, location, image, memory, cpu):
+    # Start new containers
+    # setup default values
+    port = 80
+    container_resource_requirements = None
+    command = None
+    environment_variables = None
+    config_volume_mount = [VolumeMount(name='config', mount_path='/mnt/config')]
+    #data_volume_mount = ('data', '/mnt/data')
+
+    # set memory and cpu
+    container_resource_requests = ResourceRequests(memory_in_gb = memory, cpu = cpu)
+    container_resource_requirements = ResourceRequirements(requests = container_resource_requests)
+
+    volume_mount = AzureFileVolume(share_name='config',
+                            storage_account_name=az_conf['storage_account_name'],
+                            storage_account_key=az_conf['storage_account_key'])
+
+    #volume_mount = VolumeMount(name='config', mount_path='/mnt/config')
+    volume = Volume(name='config', azure_file=volume_mount)
+    container = Container(name = name,
+                         image = image,
+                         resources = container_resource_requirements,
+                         command = command,
+                         ports = [ContainerPort(port=port)],
+                         environment_variables = environment_variables )
+
+    # defaults for container group
+    cgroup_os_type = OperatingSystemTypes.linux
+    cgroup_restart_policy = ContainerGroupRestartPolicy.never
+
+
+    image_registry_credential = ImageRegistryCredential(server=az_conf['container_registry'],
+                                                        username=az_conf['container_registry_user'],
+                                                        password=az_conf['container_registry_pwd'])
+
+    cgroup = ContainerGroup(location = location,
+                           containers = [container],
+                           os_type = cgroup_os_type,
+                           image_registry_credentials = [image_registry_credential],
+                           restart_policy = cgroup_restart_policy,
+                           volumes = [volume])
+
+    client.container_groups.create_or_update(resource_group_name, name, cgroup)
+
+def show_container_group(client, resource_group_name, name):
+    cgroup = client.container_groups.get(resource_group_name, name)
+
+    print('\n{0}\t\t\t{1}\t{2}'.format('name', 'location', 'provisioning state'))
+    print('---------------------------------------------------')
+    print('{0}\t\t{1}\t\t{2}'.format(cgroup.name, cgroup.location, cgroup.provisioning_state))
+
+def delete_resources(client, resource_client, resource_group_name, container_group_name):
+    client.container_groups.delete(resource_group_name, container_group_name)
+    resource_client.resource_groups.delete(resource_group_name)
+
+if __name__ == "__main__":
+    main()
