@@ -1,14 +1,14 @@
 # airflow-demo
 Airflow process to load PKU data
 
-- How to install python Requirements
+## How to install python Requirements
 ```
 virtualenv venv-azure
 source venv-azure/bin/activate
 pip install -r requirements.txt
 ```
 
-- How to create Container
+## How to create Container
 ```
 # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-docker-cli
 
@@ -28,10 +28,10 @@ az login
 # Log to your Azure Private registry
 az acr login --name monolivedockerregistry
 ```
-- Create config file
+## Create config file
 ```
 [Azure]
-AZURE_SUBSCRIPTION_ID = 
+AZURE_SUBSCRIPTION_ID =
 AZURE_TENANT_ID =
 AZURE_CLIENT_ID =
 AZURE_CLIENT_SECRET =
