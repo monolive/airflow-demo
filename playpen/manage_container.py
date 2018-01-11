@@ -16,46 +16,43 @@ def main():
     args = parsing_options()
     az_conf = read_az_conf(args.azureConf)
     resource_client, client = connect_azure(az_conf)
-    """Azure Container instance example."""
-
-    # List all the container instances in the subscription
-    # Define attributes of the container instance
-    # Ensure the resource group is created
-    # Create the container
-    # Retrieve and show the newly created container instance
-    # Delete and clean up
 
     list_container_groups(client)
 
-    resource_group_name = "my-container-resource-group"
-    name = "mycontainer"
-    location = "westeurope"
+    resource_group_name = args.name + "-resource-group"
+    image = az_conf['CONTAINER_REGISTRY'] + "/" + args.image
 
-    resource_client.resource_groups.create_or_update(resource_group_name, { 'location': location })
+    resource_client.resource_groups.create_or_update(resource_group_name, { 'location': az_conf['AZURE_LOCATION'] })
 
     create_container_group(az_conf, client, resource_group_name = resource_group_name,
-                          name = name,
-                          location = location,
-                          image = "monolivedockerregistry.azurecr.io/az-test:v3",
+                          name = args.name,
+                          location = az_conf['AZURE_LOCATION'],
+                          image = image,
                           memory = 1,
                           cpu = 1)
 
-    show_container_group(client, resource_group_name, name)
+    show_container_group(client, resource_group_name, args.name)
 
-    #delete_resources(client, resource_client, resource_group_name, name)
+    #delete_resources(client, resource_client, resource_group_name, args.name)
 
 def parsing_options():
     # Parse command line options
     parser = argparse.ArgumentParser()
-    parser.add_argument('--azure-conf', action='store', dest='azureConf', help='file containing azure credentials (default: %(default)s', required=False, default='/home/orenault/Developments/airflow-demo/conf/azure.conf')
+    parser.add_argument('-n', '--name', action='store', dest='name',
+                        help='container name (default: %(default)s)',
+                        required=False, default='az-test')
+    parser.add_argument('-i', '--image-name', action='store', dest='image',
+                        help='image name (default: %(default)s)',
+                        required=False, default='az-test:v5')
+    parser.add_argument('-v', '--volumes', action='store', dest='volumes',
+                        help='volume with the format: "name:mount_point"',
+                        required=False)
+    parser.add_argument('--azure-conf', action='store', dest='azureConf',
+                        help='file containing azure credentials (default: %(default)s)',
+                        required=False, default='/home/orenault/Developments/airflow-demo/conf/azure.conf')
 
-    try:
-        results = parser.parse_args()
-        return results
-    except SystemExit as err:
-        if err.code == 2:
-            parser.print_help()
-        sys.exit(0)
+    return parser.parse_args()
+
 
 def read_az_conf(azureConfFile):
     # Read Azure configuration file
