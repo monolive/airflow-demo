@@ -128,7 +128,6 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
     cgroup_os_type = OperatingSystemTypes.linux
     cgroup_restart_policy = ContainerGroupRestartPolicy.never
 
-
     image_registry_credential = ImageRegistryCredential(server=az_conf['container_registry'],
                                                         username=az_conf['container_registry_user'],
                                                         password=az_conf['container_registry_pwd'])
