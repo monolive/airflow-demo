@@ -20,19 +20,19 @@ default_args = {
 dag = DAG('LoadPKUData', default_args=default_args)
 
 t1 = BashOperator(
-    task_id='Grab data from experian',
+    task_id='grab_data_from_sftp_server',
     bash_command='',
     dag=dag
 )
 
 t2 = BashOperator(
-    task_id='Decrypt PKU data',
+    task_id='decrypt_PKU_data',
     bash_command='',
     dag=dag
 )
 
 t3 = BashOperator(
-    task_id='',
+    task_id='tmp',
     bash_command='',
     dag=dag
 )
