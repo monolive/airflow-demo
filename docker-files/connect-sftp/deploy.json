@@ -1,0 +1,68 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "storageaccountname": {
+        "type": "string"
+      },
+      "storageaccountkey": {
+        "type": "securestring"
+      },
+      "imageregistrypassword": {
+        "type": "securestring"
+      }
+    },
+    "resources":[{
+      "name": "az-test",
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2017-10-01-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "containers": [{
+          "name": "az-test",
+          "properties": {
+            "image": "monolivedockerregistry.azurecr.io/sftp-client:v1",
+            "resources": {
+              "requests": {
+                "cpu": 1,
+                "memoryInGb": 1.5
+              }
+            },
+            "volumeMounts": [{
+              "name": "config",
+              "mountPath": "/mnt/conf/"
+            },
+            {
+              "name": "data",
+              "mountPath": "/mnt/data/"
+            }]
+          }
+        }],
+        "osType": "Linux",
+        "imageRegistryCredentials": [
+          {
+            "server": "monolivedockerregistry.azurecr.io",
+            "username": "monoliveDockerRegistry",
+            "password": "[parameters('imageregistrypassword')]"
+          }
+        ],
+        "restartPolicy": "OnFailure",
+        "volumes": [{
+          "name": "config",
+          "azureFile": {
+            "shareName": "config",
+            "storageAccountName": "[parameters('storageaccountname')]",
+            "storageAccountKey": "[parameters('storageaccountkey')]"
+          }
+        },
+        {
+          "name": "data",
+          "azureFile": {
+            "shareName": "data",
+            "storageAccountName": "[parameters('storageaccountname')]",
+            "storageAccountKey": "[parameters('storageaccountkey')]"
+          }
+        }]
+      }
+    }]
+}
