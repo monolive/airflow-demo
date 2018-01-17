@@ -1,11 +1,13 @@
 from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.azure_container_plugin import AzureContainerOperator
 from datetime import datetime, timedelta
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2015, 6, 1),
+    'start_date': datetime(2018, 1, 17),
     'email': ['monoliv@gmail.com'],
     'email_on_failure': True,
     'email_on_retry': False,
@@ -17,22 +19,19 @@ default_args = {
     # 'end_date': datetime(2016, 1, 1),
 }
 
-dag = DAG('LoadPKUData', default_args=default_args)
+dag = DAG('load_pku_data', default_args=default_args)
 
-t1 = BashOperator(
-    task_id='grab_data_from_sftp_server',
-    bash_command='',
+dummy_task = DummyOperator(task_id='dummy_task', dag=dag)
+
+
+download_file = AzureContainerOperator(
+    task_id='download_file_from_azure',
+    container_name = 'azure-test',
+    container_image = 'sftp-client:v1',
+    container_cpu = 1,
+    container_mem = 1,
+    azure_location = 'europewest',
     dag=dag
 )
 
-t2 = BashOperator(
-    task_id='decrypt_PKU_data',
-    bash_command='',
-    dag=dag
-)
-
-t3 = BashOperator(
-    task_id='tmp',
-    bash_command='',
-    dag=dag
-)
+dummy_task >> download_file
