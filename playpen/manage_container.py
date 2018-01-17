@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import ConfigParser
+import configparser
 import argparse
 
 from utilities import AzureContext
@@ -20,13 +20,13 @@ def main():
     list_container_groups(client)
 
     resource_group_name = args.name + "-resource-group"
-    image = az_conf['CONTAINER_REGISTRY'] + "/" + args.image
+    image = az_conf['container_registry'] + "/" + args.image
 
-    resource_client.resource_groups.create_or_update(resource_group_name, { 'location': az_conf['AZURE_LOCATION'] })
+    resource_client.resource_groups.create_or_update(resource_group_name, { 'location': az_conf['azure_location'] })
 
     create_container_group(az_conf, client, resource_group_name = resource_group_name,
                           name = args.name,
-                          location = az_conf['AZURE_LOCATION'],
+                          location = az_conf['azure_location'],
                           image = image,
                           memory = 1,
                           cpu = 1)
@@ -43,7 +43,7 @@ def parsing_options():
                         required=False, default='az-test')
     parser.add_argument('-i', '--image-name', action='store', dest='image',
                         help='image name (default: %(default)s)',
-                        required=False, default='az-test:v5')
+                        required=False, default='sftp-client:v1')
     parser.add_argument('-v', '--volumes', action='store', dest='volumes',
                         help='volume with the format: "name:mount_point"',
                         required=False)
@@ -59,7 +59,7 @@ def read_az_conf(azureConfFile):
     azure = {}
     try:
         with open(azureConfFile, 'r') as conf:
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser()
             config.readfp(conf)
             for section_name in config.sections():
                 for name, value in config.items(section_name):
@@ -99,7 +99,7 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
     container_resource_requirements = None
     command = None
     environment_variables = None
-    volume_mount = [VolumeMount(name='config', mount_path='/mnt/config'),VolumeMount(name='data', mount_path='/mnt/data')]
+    volume_mount = [VolumeMount(name='config', mount_path='/mnt/conf'),VolumeMount(name='data', mount_path='/mnt/data')]
     # data_volume_mount = [VolumeMount(name='data', mount_path='/mnt/data')]
 
     # set memory and cpu
