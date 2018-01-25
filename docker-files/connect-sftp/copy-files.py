@@ -42,7 +42,7 @@ def main():
     with open(conf['dest_path'] + '/sha256', "a+") as f:
         # initiate connection
         try:
-            ssh.connect(conf['hostname'], username=conf['username'], key_filename=conf['ssh_key'], compress=True, look_for_keys=False)
+            ssh.connect(conf['hostname'], port=conf['port'], username=conf['username'], key_filename=conf['ssh_key'], compress=True, look_for_keys=False)
             sftp = ssh.open_sftp()
             sftp.chdir(conf['src_path'])
             for filename in sftp.listdir():

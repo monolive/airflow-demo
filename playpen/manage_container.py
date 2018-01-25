@@ -7,10 +7,10 @@ import argparse
 from utilities import AzureContext
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, Port, IpAddress,
+from azure.mgmt.containerinstance.models import (ContainerGroup, Container,  ContainerPort, Port, IpAddress, ContainerState,
                                                  ResourceRequirements, ResourceRequests, ContainerGroupNetworkProtocol,
                                                  ContainerGroupRestartPolicy, OperatingSystemTypes, VolumeMount,
-                                                 ImageRegistryCredential, AzureFileVolume, Volume)
+                                                 ImageRegistryCredential, AzureFileVolume, Volume, Logs)
 
 def main():
     args = parsing_options()
@@ -32,6 +32,7 @@ def main():
                           cpu = 1)
 
     show_container_group(client, resource_group_name, args.name)
+    #get_container_stdout(client, resource_group_name, args.name)
 
     #delete_resources(client, resource_client, resource_group_name, args.name)
 
@@ -40,7 +41,7 @@ def parsing_options():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', action='store', dest='name',
                         help='container name (default: %(default)s)',
-                        required=False, default='az-test')
+                        required=False, default='azure-test')
     parser.add_argument('-i', '--image-name', action='store', dest='image',
                         help='image name (default: %(default)s)',
                         required=False, default='sftp-client:v1')
@@ -52,7 +53,6 @@ def parsing_options():
                         required=False, default='/home/orenault/Developments/airflow-demo/conf/azure.conf')
 
     return parser.parse_args()
-
 
 def read_az_conf(azureConfFile):
     # Read Azure configuration file
@@ -84,7 +84,7 @@ def connect_azure(azure):
 
 def list_container_groups(client):
     # List known containers
-    container_groups = client.container_groups.list()
+    container_groups = client.container_groups.list(custom_header=ContainerState)
     for container_group in container_groups:
         print("\t{0}: {{ location: '{1}', containers: {2} }}".format(
             container_group.name,
@@ -123,7 +123,6 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
                          ports = [ContainerPort(port=port)],
                          environment_variables = environment_variables,
                          volume_mounts = volume_mount)
-
     # defaults for container group
     cgroup_os_type = OperatingSystemTypes.linux
     cgroup_restart_policy = ContainerGroupRestartPolicy.never
@@ -139,14 +138,35 @@ def create_container_group(az_conf, client, resource_group_name, name, location,
                            restart_policy = cgroup_restart_policy,
                            volumes = volumes)
 
-    client.container_groups.create_or_update(resource_group_name, name, cgroup)
+    toto = client.container_groups.create_or_update(resource_group_name, name, cgroup)
+    #print(toto.containers)
+    """
+    logs = client.container_logs.list(resource_group_name, name, name)
+    print(logs.content)
+    """
 
 def show_container_group(client, resource_group_name, name):
     cgroup = client.container_groups.get(resource_group_name, name)
+    # Return code for container
+    print(cgroup.instance_view.state)
+    for i in cgroup.containers:
+        # How to know if the container is stopped
+        print(i.instance_view.current_state.state)
+
+    #print(cgroup.instance_view)
+    """
+
+    for i in cgroup.instance_view.state:
+        print(i)
 
     print('\n{0}\t\t\t{1}\t{2}'.format('name', 'location', 'provisioning state'))
     print('---------------------------------------------------')
     print('{0}\t\t{1}\t\t{2}'.format(cgroup.name, cgroup.location, cgroup.provisioning_state))
+    """
+
+def get_container_stdout(client, resource_group_name, name):
+    status = client.container_group.current_state()#    logs = client.container_logs.list(resource_group_name, name)
+    print(status)
 
 def delete_resources(client, resource_client, resource_group_name, container_group_name):
     client.container_groups.delete(resource_group_name, container_group_name)

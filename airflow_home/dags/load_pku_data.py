@@ -19,7 +19,10 @@ default_args = {
     # 'end_date': datetime(2016, 1, 1),
 }
 
-dag = DAG('load_pku_data', default_args=default_args)
+dag = DAG('load_pku_data',
+    default_args=default_args,
+    schedule_interval='*/5 * * * *'
+    )
 
 dummy_task = DummyOperator(task_id='dummy_task', dag=dag)
 
@@ -27,11 +30,12 @@ dummy_task = DummyOperator(task_id='dummy_task', dag=dag)
 download_file = AzureContainerOperator(
     task_id='download_file_from_azure',
     container_name = 'azure-test',
-    container_image = 'sftp-client:v1',
+    container_image = 'sftp-client:v2',
     container_cpu = 1,
     container_mem = 1,
-    azure_location = 'europewest',
+    azure_location = 'westeurope',
+    container_volume = [{'name':'config', 'mount_path':'/mnt/conf'}, {'name':'data','mount_path':'/mnt/data'}],
     dag=dag
 )
 
-dummy_task >> download_file
+download_file >> dummy_task
