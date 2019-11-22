@@ -1,6 +1,6 @@
 adal==0.4.7
 alembic==0.9.7
-apache-airflow==1.9.0
+apache-airflow==1.10.6
 asn1crypto==0.24.0
 azure-common==1.1.8
 azure-mgmt-containerinstance==0.2.0
